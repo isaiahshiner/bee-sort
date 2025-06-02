@@ -25,6 +25,10 @@ local function startup(filePath)
     if shell then
         Top = peripheral.wrap("top");
         findDirection()
+
+        --There might be an item already in the dropper,
+        -- we should remove it, add it back later.
+        Top.pullItem(Direction, 1)
     else
         -- otherwise, we're running in lua terminal,
         -- and should load our example file.
