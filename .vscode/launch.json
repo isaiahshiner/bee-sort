@@ -7,8 +7,8 @@
         {
             "type": "lua",
             "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/test_tbl.lua"
+            "name": "vanilla_sort",
+            "program": "${workspaceFolder}/vanilla_sort/vanilla_sort.lua"
         }
     ]
 }

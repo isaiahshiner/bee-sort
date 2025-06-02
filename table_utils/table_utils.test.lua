@@ -1,6 +1,6 @@
-dofile("table-utils/table_utils.lua")
+require('table_utils.table_utils')
 
-function Test()
+local function test()
     local TEST_FILE_PATH = "test_table.lua"
     print("Serialise Test ...")
 
@@ -70,4 +70,4 @@ function Test()
     assert(os.remove(TEST_FILE_PATH))
 end
 
-Test()
+test()
