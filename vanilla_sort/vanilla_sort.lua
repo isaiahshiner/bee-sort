@@ -73,6 +73,8 @@ local function getSortedItems(stacks)
     local count = 0
     for slot, item in pairs(stacks) do
         local value = ValueChart[item.name]
+        --A random item would have `nil`
+        if not value then value = -1 end
         local slotMeta = { ["slot"] = slot, ["value"] = value }
         table.insert(items, slotMeta)
         count = count + 1
