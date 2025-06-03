@@ -1,4 +1,8 @@
 -- Sort forestry drones
+require("bee_sort.sort")
+
+STATIC_RES_FILEPATH = "bee_sort/bee_res.lua"
+MAX_SPACE = 72
 
 Direction = nil
 local function findDirection()
@@ -18,6 +22,7 @@ end
 
 Top = nil -- OpenPeripheral chest object on "top" of this computer
 StaticExampleStacks = {}
+StaticExampleStacksCount = 0
 local function startup(filePath)
     -- When run from computerCraft,
     -- shell will exist
@@ -33,6 +38,11 @@ local function startup(filePath)
         -- and should load our example file.
         require('table_utils.table_utils')
         StaticExampleStacks = table.load(filePath)
+        local count = 0
+        for _ in pairs(StaticExampleStacks) do
+            count = count + 1
+        end
+        StaticExampleStacksCount = count
     end
 end
 
@@ -46,40 +56,8 @@ local function getStacksAgnostic()
         end
         return stacks, count
     else
-        return StaticExampleStacks
+        return StaticExampleStacks, StaticExampleStacksCount
     end
-end
-
-ValueChart =
-{
-    ["planks"] = 1,
-    ["cobblestone"] = 2,
-    ["leather"] = 3,
-    ["iron_ingot"] = 4,
-    ["gold_ingot"] = 5,
-    ["dye"] = 6,
-    ["diamond"] = 7,
-    ["obsidian"] = 8,
-    ["emerald"] = 9,
-}
-
-local function compareItems(a, b)
-    return a["value"] < b["value"]
-end
-
-local function getSortedItems(stacks)
-    local items = {}
-    local count = 0
-    for slot, item in pairs(stacks) do
-        local value = ValueChart[item.name]
-        --A random item would have `nil`
-        if not value then value = -1 end
-        local slotMeta = { ["slot"] = slot, ["value"] = value }
-        table.insert(items, slotMeta)
-        count = count + 1
-    end
-    table.sort(items, compareItems)
-    return items, count
 end
 
 local function getBreedSlot(sortedItems, count)
@@ -99,9 +77,11 @@ local function moveBreed(slot)
     Top.pushItem(Direction, slot, 1)
 end
 
+
+
 local function getTrashSlots(sortedItems, count)
     local trash = {}
-    local trashLimit = count - 12
+    local trashLimit = count - MAX_SPACE
     if trashLimit <= 0 then return trash end
 
     for i = 1, trashLimit do
@@ -112,7 +92,7 @@ end
 
 local function moveTrash(slots)
     if not Top then
-        local out = "trash slots: "
+        local out = "trash slots:"
         for i, slot in ipairs(slots) do
             out = out .. slot .. ", "
         end
@@ -125,8 +105,8 @@ local function moveTrash(slots)
 end
 
 local function doBreedCycle()
-    local stacks = getStacksAgnostic()
-    local sortedItems, count = getSortedItems(stacks)
+    local stacks, count = getStacksAgnostic()
+    local sortedItems = GetSortedItems(stacks)
 
     local slot = getBreedSlot(sortedItems, count)
     moveBreed(slot)
@@ -141,12 +121,12 @@ local function doTrashCycle()
     else
         LastCount = count
     end
-    local sortedItems, count = getSortedItems(stacks)
+    local sortedItems = GetSortedItems(stacks)
     local slots = getTrashSlots(sortedItems, count)
     moveTrash(slots)
 end
 
-startup("vanilla_sort/vanilla_res.lua")
+startup(STATIC_RES_FILEPATH)
 
 if Top then
     local function breedLoop()

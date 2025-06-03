@@ -7,8 +7,8 @@
         {
             "type": "lua",
             "request": "launch",
-            "name": "vanilla_sort",
-            "program": "${workspaceFolder}/vanilla_sort/vanilla_sort.lua"
+            "name": "bee_sort",
+            "program": "${workspaceFolder}/bee_sort/controller.lua"
         }
     ]
 }
