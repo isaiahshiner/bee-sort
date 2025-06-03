@@ -3,7 +3,7 @@ function GetIndividual(bee)
 end
 
 function IsBee(bee)
-    return not GetIndividual(bee) == nil
+    return GetIndividual(bee) ~= nil
 end
 
 function GetActiveTrait(bee)

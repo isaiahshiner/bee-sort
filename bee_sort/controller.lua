@@ -1,5 +1,7 @@
 -- Sort forestry drones
 require("bee_sort.sort")
+require('table_utils.table_utils')
+
 
 STATIC_RES_FILEPATH = "bee_sort/bee_res.lua"
 MAX_SPACE = 72
@@ -36,13 +38,8 @@ local function startup(filePath)
     else
         -- otherwise, we're running in lua terminal,
         -- and should load our example file.
-        require('table_utils.table_utils')
         StaticExampleStacks = table.load(filePath)
-        local count = 0
-        for _ in pairs(StaticExampleStacks) do
-            count = count + 1
-        end
-        StaticExampleStacksCount = count
+        StaticExampleStacksCount = table.length(StaticExampleStacks)
     end
 end
 
@@ -106,7 +103,7 @@ end
 
 local function doBreedCycle()
     local stacks, count = getStacksAgnostic()
-    local sortedItems = GetSortedItems(stacks)
+    local sortedItems = GetSortedItems(stacks, count)
 
     local slot = getBreedSlot(sortedItems, count)
     moveBreed(slot)
@@ -121,7 +118,7 @@ local function doTrashCycle()
     else
         LastCount = count
     end
-    local sortedItems = GetSortedItems(stacks)
+    local sortedItems = GetSortedItems(stacks, count)
     local slots = getTrashSlots(sortedItems, count)
     moveTrash(slots)
 end

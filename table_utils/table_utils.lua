@@ -149,4 +149,20 @@ do
             end
         end
     end
+
+    function table.length(t)
+        local count = 0
+        for _ in pairs(t) do
+            count = count + 1
+        end
+        return count
+    end
+
+    function table.shallow_copy(t)
+        local t2 = {}
+        for k, v in pairs(t) do
+            t2[k] = v
+        end
+        return t2
+    end
 end
