@@ -147,7 +147,7 @@ local function doTrashCycle()
     moveTrash(slots)
 end
 
-startup("vanilla_sort/vanilla_res.lua")
+startup("example_tables/vanilla.lua")
 
 if Top then
     local function breedLoop()
