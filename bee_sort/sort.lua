@@ -101,9 +101,6 @@ local function getItemsSortedByCriterion(items, criteriaComparator)
     return sortedItems
 end
 
-math.randomseed(os.time())
-math.random(); math.random(); math.random()
-
 function GetSortedItems(stacks, count)
     local items = {}
     for slot, bee in pairs(stacks) do
@@ -140,7 +137,6 @@ function GetSortedItems(stacks, count)
     --         end
     --     end
     -- end
-
 
     local finalItems = {}
     local slotSet = {}

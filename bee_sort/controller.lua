@@ -2,8 +2,7 @@
 require("bee_sort.sort")
 require('table_utils.table_utils')
 
-
-STATIC_RES_FILEPATH = "bee_sort/bee_res.lua"
+STATIC_RES_FILEPATH = "example_tables/bees_e2e.lua"
 MAX_SPACE = 72
 
 Direction = nil
@@ -22,10 +21,25 @@ local function findDirection()
     end
 end
 
+local function startRandom()
+    -- Make sure the random start is
+    -- actually different, even if program is
+    -- run in quick succession.
+    local t = os.time()
+    local m = os.clock() * 6000000
+    local p = t + m
+    math.randomseed(p)
+    local s = 0
+    for _ = 1, 3 do
+        s = s + math.random()
+    end
+end
+
 Top = nil -- OpenPeripheral chest object on "top" of this computer
 StaticExampleStacks = {}
 StaticExampleStacksCount = 0
 local function startup(filePath)
+    startRandom()
     -- When run from computerCraft,
     -- shell will exist
     if shell then
@@ -73,8 +87,6 @@ local function moveBreed(slot)
     -- Always uses first available slot in target
     Top.pushItem(Direction, slot, 1)
 end
-
-
 
 local function getTrashSlots(sortedItems, count)
     local trash = {}
