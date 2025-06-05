@@ -3,7 +3,6 @@ require("bee_sort.sort")
 require('table_utils.table_utils')
 
 STATIC_RES_FILEPATH = "example_tables/bees_e2e.lua"
-MAX_SPACE = 72
 
 Direction = nil
 local function findDirection()
@@ -71,10 +70,6 @@ local function getStacksAgnostic()
     end
 end
 
-local function getBreedSlot(sortedItems, count)
-    return sortedItems[count]["slot"]
-end
-
 local function moveBreed(slot)
     if not Top then
         print("Breed:", slot)
@@ -86,17 +81,6 @@ local function moveBreed(slot)
     -- from chosen slot, and only move 1 item.
     -- Always uses first available slot in target
     Top.pushItem(Direction, slot, 1)
-end
-
-local function getTrashSlots(sortedItems, count)
-    local trash = {}
-    local trashLimit = count - MAX_SPACE
-    if trashLimit <= 0 then return trash end
-
-    for i = 1, trashLimit do
-        table.insert(trash, sortedItems[i]["slot"])
-    end
-    return trash
 end
 
 local function moveTrash(slots)
@@ -117,7 +101,7 @@ local function doBreedCycle()
     local stacks, count = getStacksAgnostic()
     local sortedItems = GetSortedItems(stacks, count)
 
-    local slot = getBreedSlot(sortedItems, count)
+    local slot = GetBreedSlot(sortedItems, count)
     moveBreed(slot)
 end
 
@@ -131,7 +115,7 @@ local function doTrashCycle()
         LastCount = count
     end
     local sortedItems = GetSortedItems(stacks, count)
-    local slots = getTrashSlots(sortedItems, count)
+    local slots = GetTrashSlots(sortedItems, count)
     moveTrash(slots)
 end
 

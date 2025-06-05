@@ -1,8 +1,9 @@
 require('table_utils.table_utils')
+local lu = require('luaunit')
 
-local function test()
+function TestTableSaveLoad()
     local TEST_FILE_PATH = "test_table.lua"
-    print("Serialise Test ...")
+    --print("Serialise Test ...")
 
     local t = {}
     t.a = 1
@@ -34,40 +35,43 @@ local function test()
     t[test] = 1
 
 
-    print("\n## BEFORE SAVE ##")
+    --print("\n## BEFORE SAVE ##")
 
-    table.print(t)
+    --table.print(t)
 
     --// test save to file
-    assert(table.save(t, TEST_FILE_PATH) == nil)
+    --assert(table.save(t, TEST_FILE_PATH) == nil)
+    lu.assertIsNil(table.save(t, TEST_FILE_PATH))
 
     -- load table from file
     local t2, err = table.load(TEST_FILE_PATH)
 
-    assert(err == nil)
+    --assert(err == nil)
+    lu.assertIsNil(err)
 
 
-    print("\n## AFTER SAVE ##")
+    --print("\n## AFTER SAVE ##")
 
-    print("\n## LOAD FROM FILE ##")
+    --print("\n## LOAD FROM FILE ##")
 
-    table.print(t2)
+    --table.print(t2)
 
-    print("\n//Test References")
+    --print("\n//Test References")
 
-    assert(t2.c.a == t2)
+    --assert(t2.c.a == t2)
+    lu.assertEquals(t2.c.a, t2)
 
-    print("\n//Test Long string")
+    --print("\n//Test Long string")
 
-    assert(t.lstrv == t2.lstrv)
+    --assert(t.lstrv == t2.lstrv)
+    lu.assertEquals(t.lstrv, t2.lstrv)
 
-    print("\n//Test Function\n\n")
+    --print("\n//Test Function\n\n")
 
-    assert(t2.func == nil)
+    --assert(t2.func == nil)
+    lu.assertIsNil(t2.func)
 
-    print("\n*** Test SUCCESSFUL ***")
+    --print("\n*** Test SUCCESSFUL ***")
 
     assert(os.remove(TEST_FILE_PATH))
 end
-
-test()

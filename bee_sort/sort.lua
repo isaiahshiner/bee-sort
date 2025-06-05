@@ -1,5 +1,9 @@
 require("bee_sort.selectors")
 
+-- Number of slots to keep in diamond chest
+-- TODO: maybe a constants file?
+MAX_SPACE = 72
+
 local function compareRank(a, b)
     return a ~= b, a < b
 end
@@ -163,4 +167,19 @@ function GetSortedItems(stacks, count)
     end
 
     return finalItems
+end
+
+function GetBreedSlot(sortedItems, count)
+    return sortedItems[count]["slot"]
+end
+
+function GetTrashSlots(sortedItems, count)
+    local trash = {}
+    local trashLimit = count - MAX_SPACE
+    if trashLimit <= 0 then return trash end
+
+    for i = 1, trashLimit do
+        table.insert(trash, sortedItems[i]["slot"])
+    end
+    return trash
 end
