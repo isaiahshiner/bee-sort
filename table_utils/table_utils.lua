@@ -165,4 +165,30 @@ do
         end
         return t2
     end
+
+    function table.isEqual(o1, o2)
+        -- same object
+        if o1 == o2 then return true end
+
+        local o1Type = type(o1)
+        local o2Type = type(o2)
+        --- different type
+        if o1Type ~= o2Type then return false end
+        --- same type but not table, already compared above
+        if o1Type ~= 'table' then return false end
+
+        -- iterate over o1
+        for key1, value1 in pairs(o1) do
+            local value2 = o2[key1]
+            if value2 == nil or table.isEqual(value1, value2) == false then
+                return false
+            end
+        end
+
+        --- check keys in o2 but missing from o1
+        for key2, _ in pairs(o2) do
+            if o1[key2] == nil then return false end
+        end
+        return true
+    end
 end

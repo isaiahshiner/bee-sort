@@ -28,6 +28,20 @@ function TestBeesInactiveSlotTwo()
     lu.assertEquals(slot, 2)
 end
 
+-- We prefer a bee that has all traits purebred,
+-- even if we don't actually sort by that trait.
+-- This way, all produced drones will stack
+-- these currently don't work because the raw data was generated incorrectly.
+function TestBeesUnrelatedSlotOne()
+    local slot = getSlots(10, GetBreedSlot, "example_tables/bees_unrelated.lua")
+    lu.assertEquals(slot, 2)
+end
+
+function TestBeesUnrelatedSlotTwo()
+    local slot = getSlots(5, GetBreedSlot, "example_tables/bees_unrelated.lua")
+    lu.assertEquals(slot, 2)
+end
+
 function TestBeesTrash()
     local slots = getSlots(5, GetTrashSlots, "example_tables/bees_e2e.lua")
     lu.assertEquals(slots, { 66, 65, 50, 53, 51, 36, 58, 35, 36 })

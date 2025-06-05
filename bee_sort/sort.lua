@@ -4,16 +4,40 @@ require("bee_sort.selectors")
 -- TODO: maybe a constants file?
 MAX_SPACE = 72
 
+-- Just FYI, I might have the comparisons
+-- reversed from what's expected?
+-- This assumes 'true' means that
+-- 'a' is worse than 'b'
+-- and false means that
+-- 'a' is better than or equal to 'b'
+
 local function compareRank(a, b)
     return a ~= b, a < b
 end
 
 local function compareSpeed(a, b)
+    -- we want the fastest speed
     return a ~= b, a < b
 end
 
 local function compareLifeSpan(a, b)
+    -- we actually want the slowest lifespan
     return a ~= b, a > b
+end
+
+local function compareTrait(a, b)
+    -- a and b are bools, saying whether
+    -- the bees are completely purebred,
+    -- even for traits we don't care about,
+    -- meaning their produced drones will always stack
+    -- with this one.
+    if a == b then
+        return false, true
+    else
+        -- if b is true, its the one with equal traits, so 'b' its better
+        -- otherwise, a is the one with equal traits, so 'b' is worse.
+        return true, b
+    end
 end
 
 local function compareSpeedComplete(a, b)
@@ -36,6 +60,12 @@ local function compareSpeedComplete(a, b)
     local lifeInEq, lifeInCmp =
         compareLifeSpan(GetLifespan(a.bee, false), GetLifespan(b.bee, false))
     if lifeInEq then return lifeInCmp end
+
+    local aTrait = table.isEqual(GetTrait(a.bee, true), GetTrait(a.bee, false))
+    local bTrait = table.isEqual(GetTrait(b.bee, true), GetTrait(b.bee, false))
+    local traitEq, traitCmp =
+        compareTrait(aTrait, bTrait)
+    if traitEq then return traitCmp end
 
     return false
 end
@@ -60,6 +90,12 @@ local function compareLifespanComplete(a, b)
     local speedInEq, speedInCmp =
         compareSpeed(GetSpeed(a.bee, false), GetSpeed(b.bee, false))
     if speedInEq then return speedInCmp end
+
+    local aTrait = table.isEqual(GetTrait(a.bee, true), GetTrait(a.bee, false))
+    local bTrait = table.isEqual(GetTrait(b.bee, true), GetTrait(b.bee, false))
+    local traitEq, traitCmp =
+        compareTrait(aTrait, bTrait)
+    if traitEq then return traitCmp end
 
     return false
 end

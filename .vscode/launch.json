@@ -9,6 +9,12 @@
             "request": "launch",
             "name": "bee_sort",
             "program": "${workspaceFolder}/bee_sort/controller.lua"
+        },
+        {
+            "type": "lua",
+            "request": "launch",
+            "name": "run tests",
+            "program": "${workspaceFolder}/run_tests.lua"
         }
     ]
 }
