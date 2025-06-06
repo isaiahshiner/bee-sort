@@ -33,16 +33,43 @@ end
 -- This way, all produced drones will stack
 -- these currently don't work because the raw data was generated incorrectly.
 function TestBeesUnrelatedSlotOne()
-    local slot = getSlots(10, GetBreedSlot, "example_tables/bees_unrelated.lua")
-    lu.assertEquals(slot, 2)
+    local slot = getSlots(10, GetBreedSlot, "example_tables/bees_uncategorized.lua")
+    lu.assertEquals(slot, 1)
 end
 
 function TestBeesUnrelatedSlotTwo()
-    local slot = getSlots(5, GetBreedSlot, "example_tables/bees_unrelated.lua")
-    lu.assertEquals(slot, 2)
+    local slot = getSlots(5, GetBreedSlot, "example_tables/bees_uncategorized.lua")
+    lu.assertEquals(slot, 1)
 end
 
 function TestBeesTrash()
+    local expected = {
+        72,
+        74,
+        69,
+        69,
+        79,
+        78,
+        68,
+        86,
+        64,
+        84,
+        64,
+        77,
+        85,
+        85,
+        82,
+        81,
+        73,
+        71,
+        83,
+        58,
+        63,
+        37,
+        16,
+        33,
+        37
+    }
     local slots = getSlots(5, GetTrashSlots, "example_tables/bees_e2e.lua")
-    lu.assertEquals(slots, { 66, 65, 50, 53, 51, 36, 58, 35, 36 })
+    lu.assertEquals(slots, expected)
 end

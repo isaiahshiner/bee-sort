@@ -1,6 +1,7 @@
---[[
+do
+    --[[
     by ChillCode
-    style edits by isaiahshiner
+    edits by isaiahshiner
     http://lua-users.org/wiki/SaveTableToFile
 	Save Table to File
 	Load Table from File
@@ -8,7 +9,7 @@
 	
 	Lua 5.2 compatible
 	
-	Only Saves Tables, Numbers and Strings
+	Only Saves Tables, Numbers and Strings (edit: and booleans)
 	Insides Table References are saved
 	Does not save Userdata, Metatables, Functions and indices of these
 	----------------------------------------------------
@@ -26,9 +27,8 @@
 	----------------------------------------------------
 	
 	Licensed under the same terms as Lua itself.
-]] --
-do
-    -- declare local variables
+    ]] --
+
     --// export_string( string )
     --// returns a "Lua" portable version of the string
     local function export_string(s)
@@ -63,7 +63,7 @@ do
                     file:write(charS .. "{" .. lookup[v] .. "}," .. charE)
                 elseif stype == "string" then
                     file:write(charS .. export_string(v) .. "," .. charE)
-                elseif stype == "number" then
+                elseif stype == "number" or stype == "boolean" then
                     file:write(charS .. tostring(v) .. "," .. charE)
                 end
             end
@@ -82,7 +82,7 @@ do
                         str = charS .. "[{" .. lookup[i] .. "}]="
                     elseif stype == "string" then
                         str = charS .. "[" .. export_string(i) .. "]="
-                    elseif stype == "number" then
+                    elseif stype == "number" or stype == "boolean" then
                         str = charS .. "[" .. tostring(i) .. "]="
                     end
 
@@ -97,7 +97,7 @@ do
                             file:write(str .. "{" .. lookup[v] .. "}," .. charE)
                         elseif stype == "string" then
                             file:write(str .. export_string(v) .. "," .. charE)
-                        elseif stype == "number" then
+                        elseif stype == "number" or stype == "boolean" then
                             file:write(str .. tostring(v) .. "," .. charE)
                         end
                     end
@@ -166,6 +166,7 @@ do
         return t2
     end
 
+    -- https://gist.github.com/sapphyrus/fd9aeb871e3ce966cc4b0b969f62f539?permalink_comment_id=4563041#gistcomment-4563041
     function table.isEqual(o1, o2)
         -- same object
         if o1 == o2 then return true end
