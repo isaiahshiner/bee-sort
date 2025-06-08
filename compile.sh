@@ -28,6 +28,7 @@ files=(
     "bee_sort/selectors.lua"
     "bee_sort/sort.lua"
     "bee_sort/controller.lua"
+    "bee_sort/main.lua"
 )
 
 # Append each file to the output file
