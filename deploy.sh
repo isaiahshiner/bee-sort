@@ -89,4 +89,12 @@ for ((i = start; i <= end; i++)); do
     echo "shell.run('$script_name')" >> "$computer_dir/startup"
 done
 
+# one last feature, there's a file called "lastid.txt" in the target directory
+# It contains the highest numbered computer that has been created.
+# We should set it to one less than the start number
+if [ -f "$target_directory/lastid.txt" ]; then
+    echo "$((start - 1))" > "$target_directory/lastid.txt"
+    echo "Updated lastid.txt to $((start - 1))"
+fi
+
 echo "Deployment complete."
