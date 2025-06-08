@@ -39,6 +39,7 @@ StaticExampleStacks = {}
 StaticExampleStacksCount = 0
 local function startup(filePath)
     startRandom()
+    GenerateComparators()
     -- When run from computerCraft,
     -- shell will exist
     if shell then

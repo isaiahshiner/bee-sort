@@ -14,7 +14,13 @@
             "type": "lua",
             "request": "launch",
             "name": "run tests",
-            "program": "${workspaceFolder}/run_tests.lua"
+            "program": "${workspaceFolder}/run_tests.lua",
+        },
+        {
+            "type": "lua",
+            "request": "launch",
+            "name": "run one test manual",
+            "program": "${workspaceFolder}/bee_sort/sort.test.lua",
         }
     ]
 }

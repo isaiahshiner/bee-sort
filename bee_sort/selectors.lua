@@ -1,43 +1,55 @@
-function GetIndividual(bee)
-    return bee.individual
+function GetRank(item)
+    return item.rank
 end
 
-function IsBee(bee)
-    return GetIndividual(bee) ~= nil
+function GetBee(item)
+    return item.bee
 end
 
-function GetActiveTrait(bee)
-    return GetIndividual(bee).active
+function GetIndividual(item)
+    return GetBee(item).individual
 end
 
-function GetInactiveTrait(bee)
-    return GetIndividual(bee).inactive
+function IsBee(item)
+    return GetIndividual(item) ~= nil
 end
 
-function GetTrait(bee, active)
+function GetActiveTrait(item)
+    return GetIndividual(item).active
+end
+
+function GetInactiveTrait(item)
+    return GetIndividual(item).inactive
+end
+
+function GetTrait(item, active)
     if active then
-        return GetActiveTrait(bee)
+        return GetActiveTrait(item)
     else
-        return GetInactiveTrait(bee)
+        return GetInactiveTrait(item)
     end
 end
 
-function GetSpecies(bee, active)
-    return GetTrait(bee, active).species
+function GetSpecies(item, active)
+    return GetTrait(item, active).species
 end
 
-function GetName(bee, active)
-    return GetSpecies(bee, active).binomialName
+function GetName(item, active)
+    return GetSpecies(item, active).binomialName
 end
 
-function GetSpeed(bee, active)
-    return GetTrait(bee, active).speed
+function GetSpeed(item, active)
+    return GetTrait(item, active).speed
 end
 
-function GetLifespan(bee, active)
-    return GetTrait(bee, active).lifespan
+function GetLifespan(item, active)
+    return GetTrait(item, active).lifespan
 end
 
-function IsPure(bee, sel)
-    return sel(bee, true) == sel(bee, false)
+function IsPure(item, sel)
+    return sel(item, true) == sel(item, false)
+end
+
+function IsFullyPure(item)
+    return table.isEqual(GetTrait(item, true), GetTrait(item, false))
 end

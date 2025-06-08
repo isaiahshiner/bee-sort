@@ -12,6 +12,10 @@ MAX_SPACE = 72
 -- 'a' is better than or equal to 'b'
 
 local function compareRank(a, b)
+    if a == -1 and b == -1 then
+        -- -1 means not a bee, pretend they're different so it short circuits
+        return true, false
+    end
     return a ~= b, a < b
 end
 
@@ -40,94 +44,81 @@ local function compareTrait(a, b)
     end
 end
 
-local function compareSpeedComplete(a, b)
-    local rankEq, rankCmp =
-        compareRank(a.rank, b.rank)
-    if rankEq then return rankCmp end
-
-    local speedActEq, speedActCmp =
-        compareSpeed(GetSpeed(a.bee, true), GetSpeed(b.bee, true))
-    if speedActEq then return speedActCmp end
-
-    local speedInEq, speedInCmp =
-        compareSpeed(GetSpeed(a.bee, false), GetSpeed(b.bee, false))
-    if speedInEq then return speedInCmp end
-
-    local lifeActEq, lifeActCmp =
-        compareLifeSpan(GetLifespan(a.bee, true), GetLifespan(b.bee, true))
-    if lifeActEq then return lifeActCmp end
-
-    local lifeInEq, lifeInCmp =
-        compareLifeSpan(GetLifespan(a.bee, false), GetLifespan(b.bee, false))
-    if lifeInEq then return lifeInCmp end
-
-    local aTrait = table.isEqual(GetTrait(a.bee, true), GetTrait(a.bee, false))
-    local bTrait = table.isEqual(GetTrait(b.bee, true), GetTrait(b.bee, false))
-    local traitEq, traitCmp =
-        compareTrait(aTrait, bTrait)
-    if traitEq then return traitCmp end
-
-    return false
-end
-
-local function compareLifespanComplete(a, b)
-    local rankEq, rankCmp =
-        compareRank(a.rank, b.rank)
-    if rankEq then return rankCmp end
-
-    local lifeActEq, lifeActCmp =
-        compareLifeSpan(GetLifespan(a.bee, true), GetLifespan(b.bee, true))
-    if lifeActEq then return lifeActCmp end
-
-    local lifeInEq, lifeInCmp =
-        compareLifeSpan(GetLifespan(a.bee, false), GetLifespan(b.bee, false))
-    if lifeInEq then return lifeInCmp end
-
-    local speedActEq, speedActCmp =
-        compareSpeed(GetSpeed(a.bee, true), GetSpeed(b.bee, true))
-    if speedActEq then return speedActCmp end
-
-    local speedInEq, speedInCmp =
-        compareSpeed(GetSpeed(a.bee, false), GetSpeed(b.bee, false))
-    if speedInEq then return speedInCmp end
-
-    local aTrait = table.isEqual(GetTrait(a.bee, true), GetTrait(a.bee, false))
-    local bTrait = table.isEqual(GetTrait(b.bee, true), GetTrait(b.bee, false))
-    local traitEq, traitCmp =
-        compareTrait(aTrait, bTrait)
-    if traitEq then return traitCmp end
-
-    return false
-end
-
--- I'll have to be more clever to make something like this work,
--- Esp with more than 2 criteria.
--- local function createComparator(comparator, selector)
---     local function innerCompare(a, b)
---         local rankEq, rankCmp =
---             compareRank(a.rank, b.rank)
---         if rankEq then return rankCmp end
-
---         local critActEq, critActCmp =
---             comparator(selector(a.bee, true), selector(b.bee, true))
---         if critActEq then return critActCmp end
-
---         local critInEq, critInCmp =
---             comparator(selector(a.bee, false), selector(b.bee, false))
---         if critInEq then return critInCmp end
-
---         return false
---     end
-
---     return innerCompare
--- end
-
-Criteria = {
-    compareSpeedComplete,
-    compareLifespanComplete
+CriteriaList = {
+    {
+        comparator = compareSpeed,
+        selector = GetSpeed
+    },
+    {
+        comparator = compareLifeSpan,
+        selector = GetLifespan
+    }
 }
 
-local function getSimpleRank(bee)
+local generateBasicComparator = function(comparator, selector)
+    local function innerCompare(a, b)
+        local valDiff, valCmp =
+            comparator(selector(a), selector(b))
+        if valDiff then return valDiff, valCmp end
+        return false, false
+    end
+
+    return innerCompare
+end
+
+local generateSingleCriteriaComparator = function(criteria)
+    local comparator = criteria.comparator
+    local selector = criteria.selector
+
+    local function innerCompare(a, b)
+        local critActDiff, critActCmp =
+            comparator(selector(a, true), selector(b, true))
+        if critActDiff then return critActDiff, critActCmp end
+
+        local critInDiff, critInCmp =
+            comparator(selector(a, false), selector(b, false))
+        if critInDiff then return critInDiff, critInCmp end
+
+        return false, false
+    end
+
+    return innerCompare
+end
+
+ComparatorList = {}
+GenerateComparators = function()
+    -- For each criteria, we need a comparator that starts with a comparator for that criteria,
+    -- followed by comparators for all other criteria.
+    -- There should be 1 final comparator for each criteria.
+    -- The order that criteria are applied should just cycle,
+    -- So, if we have criteria A, B, and C,
+    -- The first comparator should be:
+    -- checkRank, then A, B, C, then trait equal
+    -- then the second comparator should be:
+    -- checkRank, then B, C, A, then trait equal
+
+    local criteriaCount = #CriteriaList
+    for i, criteria in ipairs(CriteriaList) do
+        local comparatorList = {}
+        table.insert(comparatorList, generateBasicComparator(compareRank, GetRank))
+        for j = 0, criteriaCount - 1 do
+            local index = ((i - 1 + j) % criteriaCount) + 1
+            table.insert(comparatorList, generateSingleCriteriaComparator(CriteriaList[index]))
+        end
+        table.insert(comparatorList, generateBasicComparator(compareTrait, IsFullyPure))
+
+        local function finalComparator(a, b)
+            for _, comparator in ipairs(comparatorList) do
+                local resDiff, resCmp = comparator(a, b)
+                if resDiff then return resCmp end
+            end
+            return false
+        end
+        table.insert(ComparatorList, finalComparator)
+    end
+end
+
+function GetSimpleRank(bee)
     if not IsBee(bee) then return -1 end
     if not IsPure(bee, GetName) then return 0 end
     -- As long as its a purebred bee,
@@ -135,73 +126,69 @@ local function getSimpleRank(bee)
     return 1
 end
 
-local function getItemsSortedByCriterion(items, criteriaComparator)
+local function getItemsSortedByCriterion(items, comparator)
     local sortedItems = table.shallow_copy(items)
-    table.sort(sortedItems, criteriaComparator)
+    table.sort(sortedItems, comparator)
     return sortedItems
 end
 
-function GetSortedItems(stacks, count)
+function GetItemObjsFromStacks(stacks)
     local items = {}
-    for slot, bee in pairs(stacks) do
-        local rank = getSimpleRank(bee)
+    for slot, item in pairs(stacks) do
         local slotObj = {
             ["slot"] = slot,
-            ["rank"] = rank,
-            ["bee"] = bee
+            ["bee"] = item
         }
+        local rank = GetSimpleRank(slotObj)
+        slotObj["rank"] = rank
+
         table.insert(items, slotObj)
     end
+    return items
+end
 
+local function getSortedTablesFromItems(items)
     local sortedTables = {}
-    for _, criteria in ipairs(Criteria) do
-        table.insert(sortedTables, getItemsSortedByCriterion(items, criteria))
+    for _, comparator in ipairs(ComparatorList) do
+        table.insert(sortedTables, getItemsSortedByCriterion(items, comparator))
     end
+    return sortedTables
+end
 
-    -- always choose randomly, not ideal
-    -- local sortedTableSlotIndex = {}
-    -- for _, _ in ipairs(sortedTables) do
-    --     table.insert(sortedTableSlotIndex, count)
-    -- end
-    -- for rankIndex = count, 1, -1 do
-    --     local randomIndex = math.random(criteriaCount)
-    --     local chosenTable = sortedTables[randomIndex]
-    --     local chosenBee = chosenTable[sortedTableSlotIndex[randomIndex]]
-    --     table.insert(finalItems, 1, chosenBee)
+local function popRandomFromArray(array)
+    local size = table.length(array)
+    local index = math.random(size)
+    local value = array[index]
+    table.remove(array, index)
+    return value
+end
 
-    --     for sortedTableIndex = 1, criteriaCount do
-    --         local slotIndex = sortedTableSlotIndex[sortedTableIndex]
-    --         local maybeBee = sortedTables[sortedTableIndex][slotIndex]
-    --         if chosenBee.slot == maybeBee.slot then
-    --             sortedTableSlotIndex[sortedTableIndex] = sortedTableSlotIndex[sortedTableIndex] - 1
-    --         end
-    --     end
-    -- end
-
+local function getFinalSortedItems(sortedTables, count)
     local finalItems = {}
     local slotSet = {}
-
-    -- Always choose at least 1 from each list
-    -- assumes only 2 lists
-    local finalCount = count
-    while finalCount > 0 do
-        local randomIndex = math.random(2)
-        local chosenTable = sortedTables[randomIndex]
-        local chosenBee = chosenTable[finalCount]
-        table.insert(finalItems, 1, chosenBee)
-        slotSet[chosenBee.slot] = true
-
-        local otherIndex = randomIndex == 1 and 2 or 1
-        local otherBee = sortedTables[otherIndex][finalCount]
-        local otherBeeInUse = slotSet[otherBee.slot]
-        if not otherBeeInUse then
-            table.insert(finalItems, 1, otherBee)
-            slotSet[chosenBee.slot] = true
-            finalCount = finalCount - 1
+    local criteriaCount = table.length(sortedTables)
+    for i = count, 1, -1 do
+        local availableIndexes = {}
+        for i = 1, criteriaCount do
+            table.insert(availableIndexes, i)
         end
-        finalCount = finalCount - 1
+        for j = 1, criteriaCount do
+            local randomIndex = popRandomFromArray(availableIndexes)
+            local chosenBee = sortedTables[randomIndex][i]
+            if not slotSet[chosenBee.slot] then
+                table.insert(finalItems, 1, chosenBee)
+                slotSet[chosenBee.slot] = true
+            end
+        end
     end
 
+    return finalItems
+end
+
+function GetSortedItems(stacks, count)
+    local items = GetItemObjsFromStacks(stacks)
+    local sortedTables = getSortedTablesFromItems(items)
+    local finalItems = getFinalSortedItems(sortedTables, count)
     return finalItems
 end
 
