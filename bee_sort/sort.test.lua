@@ -18,30 +18,48 @@ local function getSlots(randomseed, chooser, path)
     return slots, count
 end
 
--- We should randomly choose between both bees.
--- I found a seed which always chooses one or the other
-function TestBeesInactiveSlotOne()
-    local slot = getSlots(10, GetBreedSlot, "example_tables/bees_inactive.lua")
-    lu.assertEquals(slot, 1)
+local function searchSlotRandom(chooser, path, expected)
+    local stacks, count = getStacks(path)
+    local seen = {}
+    for seed = 1, 100 do
+        math.randomseed(seed)
+        local sortedItems = GetSortedItems(stacks, count)
+        local slot = chooser(sortedItems, count)
+        seen[slot] = true
+    end
+
+    --not sure how to do symmetric difference (or whatever exactly I want)
+    for e, _ in pairs(expected) do
+        lu.assertIsTrue(seen[e], "Missing expected slot " .. tostring(e))
+    end
+    for s, _ in pairs(seen) do
+        lu.assertIsTrue(expected[s], "Got unexpected slot " .. tostring(s))
+    end
 end
 
-function TestBeesInactiveSlotTwo()
-    local slot = getSlots(5, GetBreedSlot, "example_tables/bees_inactive.lua")
-    lu.assertEquals(slot, 2)
+-- We want to sometimes choose an a bee that has all overall worse traits,
+-- but has a single inactive trait that is better.
+function TestBeesInactive()
+    local path = "example_tables/bees_inactive.lua"
+    searchSlotRandom(GetBreedSlot, path, { [1] = true, [2] = true })
 end
 
 -- We prefer a bee that has all traits purebred,
 -- even if we don't actually sort by that trait.
 -- This way, all produced drones will stack
--- these currently don't work because the raw data was generated incorrectly.
-function TestBeesUnrelatedSlotOne()
-    local slot = getSlots(10, GetBreedSlot, "example_tables/bees_uncategorized.lua")
-    lu.assertEquals(slot, 1)
+function TestBeesUncategorized()
+    local path = "example_tables/bees_uncategorized.lua"
+    searchSlotRandom(GetBreedSlot, path, { [1] = true })
 end
 
-function TestBeesUnrelatedSlotTwo()
-    local slot = getSlots(5, GetBreedSlot, "example_tables/bees_uncategorized.lua")
-    lu.assertEquals(slot, 1)
+function TestBeesFlower()
+    local path = "example_tables/bees_flowers.lua"
+    searchSlotRandom(GetBreedSlot, path, { [1] = true })
+end
+
+function TestBeesLightning()
+    local path = "example_tables/bees_lightning.lua"
+    searchSlotRandom(GetBreedSlot, path, { [2] = true })
 end
 
 function TestBeesTrash()
@@ -52,7 +70,8 @@ function TestBeesTrash()
         -- we don't care about order
         lu.assertTableContains(slots, expectedSlot)
     end
-    lu.assertEquals(table.length(slots), table.length(expected))
+    lu.assertEquals(table.length(slots), table.length(expected),
+        "Got unexpected number of trash slots")
 end
 
 function TestLength()

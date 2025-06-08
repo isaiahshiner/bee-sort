@@ -44,13 +44,39 @@ local function compareLifeSpan(a, b)
     return a ~= b, a > b
 end
 
+local function compareEffect(a, b)
+    -- There are some good and bad effects,
+    -- I'll probably edit this manually as I find out which are which.
+    local badEffects = {
+        ["Lightning"] = true,
+    }
+    local aBad = badEffects[a] or false
+    local bBad = badEffects[b] or false
+    if aBad == bBad then
+        return false, false
+    else
+        return true, aBad
+    end
+end
+
+local function compareFlower(a, b)
+    -- I think I can safely assume 'Flowers' are always the best?
+    local aIsFlowers = a == "Flowers"
+    local bIsFlowers = b == "Flowers"
+    if aIsFlowers == bIsFlowers then
+        return false, false
+    else
+        return true, bIsFlowers
+    end
+end
+
 local function compareTrait(a, b)
     -- a and b are bools, saying whether
     -- the bees are completely purebred,
     -- even for traits we don't care about,
     -- meaning their produced drones will always stack.
     if a == b then
-        return false, true
+        return false, false
     else
         -- if b is true, its the one with equal traits, so 'b' its better
         -- otherwise, a is the one with equal traits, so 'b' is worse.
@@ -66,6 +92,14 @@ CriteriaList = {
     {
         comparator = compareLifeSpan,
         selector = GetLifespan
+    },
+    {
+        comparator = compareEffect,
+        selector = GetEffect
+    },
+    {
+        comparator = compareFlower,
+        selector = GetFlower
     }
 }
 

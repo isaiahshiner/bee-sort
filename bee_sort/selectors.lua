@@ -46,6 +46,14 @@ function GetLifespan(item, active)
     return GetTrait(item, active).lifespan
 end
 
+function GetEffect(item, active)
+    return GetTrait(item, active).effect
+end
+
+function GetFlower(item, active)
+    return GetTrait(item, active).flowerProvider
+end
+
 function IsPure(item, sel)
     return sel(item, true) == sel(item, false)
 end
