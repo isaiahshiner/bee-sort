@@ -1,8 +1,19 @@
--- Sort forestry drones
+-- Interface with the the 3 inventories:
+-- 1. Main chest (top/above the computer)
+--  * Diamond chest, 108 slots, limited to 72 slots
+-- 2. Breeding dropper (east or west of main chest)
+--  * Vanilla dropper, 9 slots, only 1 item should be in here at a time
+--  * Could do north/south, I just didn't need it.
+-- 3. "Trash" chest (above the main chest)
+--  * Ender chest, 27 slots, but items are piped out, so basically infinite.
+
+-- A single bee (drone) is moved to the dropper when the program starts, and
+-- each time a redstone signal is received.
+-- Trash is checked/moved for once every second.
+-- I don't think there's a way to detect inventory changes.
+
 require("bee_sort.sort")
 require('table_utils.table_utils')
-
-STATIC_RES_FILEPATH = "example_tables/bees_e2e.lua"
 
 Direction = nil
 local function findDirection()
@@ -35,48 +46,30 @@ local function startRandom()
 end
 
 Top = nil -- OpenPeripheral chest object on "top" of this computer
-StaticExampleStacks = {}
-StaticExampleStacksCount = 0
-local function startup(filePath)
+function Startup()
     startRandom()
     GenerateComparators()
-    -- When run from computerCraft,
-    -- shell will exist
-    if shell then
-        Top = peripheral.wrap("top");
-        findDirection()
+    Top = peripheral.wrap("top");
+    findDirection()
 
-        --There might be an item already in the dropper,
-        -- we should remove it, add it back later.
-        Top.pullItem(Direction, 1)
-    else
-        -- otherwise, we're running in lua terminal,
-        -- and should load our example file.
-        StaticExampleStacks = table.load(filePath)
-        StaticExampleStacksCount = table.length(StaticExampleStacks)
-    end
+    --There might be an item already in the dropper,
+    -- we should remove it, add it back later.
+    Top.pullItem(Direction, 1)
 end
 
-local function getStacksAgnostic()
-    if Top then
-        local stacks = {}
-        local count = 0
-        for slot, item in pairs(Top.getAllStacks()) do
-            stacks[slot] = item.all()
-            count = count + 1
-        end
-        return stacks, count
-    else
-        return StaticExampleStacks, StaticExampleStacksCount
+local function getStacks()
+    local stacks = {}
+    local count = 0
+    -- `getAllStacks` returns a table of item objects
+    -- `all` gets all the details of an item stack
+    for slot, item in pairs(Top.getAllStacks()) do
+        stacks[slot] = item.all()
+        count = count + 1
     end
+    return stacks, count
 end
 
 local function moveBreed(slot)
-    if not Top then
-        print("Breed:", slot)
-        return
-    end
-
     -- Push an item from the main chest
     -- to the breeding dropper (direction)
     -- from chosen slot, and only move 1 item.
@@ -85,21 +78,13 @@ local function moveBreed(slot)
 end
 
 local function moveTrash(slots)
-    if not Top then
-        local out = "trash slots:"
-        for i, slot in ipairs(slots) do
-            out = out .. slot .. ", "
-        end
-        print(out)
-        return
-    end
     for i, slot in ipairs(slots) do
         Top.pushItem("up", slot)
     end
 end
 
-local function doBreedCycle()
-    local stacks, count = getStacksAgnostic()
+function DoBreedCycle()
+    local stacks, count = getStacks()
     local sortedItems = GetSortedItems(stacks, count)
 
     local slot = GetBreedSlot(sortedItems, count)
@@ -108,8 +93,8 @@ end
 
 LastCount = 0
 
-local function doTrashCycle()
-    local stacks, count = getStacksAgnostic()
+function DoTrashCycle()
+    local stacks, count = getStacks()
     if LastCount == count then
         return
     else
@@ -120,25 +105,28 @@ local function doTrashCycle()
     moveTrash(slots)
 end
 
-startup(STATIC_RES_FILEPATH)
-
-if Top then
+function MainLoop()
     local function breedLoop()
-        doBreedCycle()
+        DoBreedCycle()
         while true do
+            -- When the dropper is powered, this computer also gets powered.
+            -- We should add another drone when that happens.
             os.pullEvent("redstone")
-            sleep(0.5) --ignore double pulse
-            doBreedCycle()
+            -- the redstone event triggers whenever redstone *changes*,
+            -- so we also get the off signal. We wait a bit to ignore that.
+            sleep(0.5)
+            DoBreedCycle()
         end
     end
     local function trashLoop()
         while true do
-            doTrashCycle()
-            sleep(1) -- don't kill PC
+            DoTrashCycle()
+            -- don't kill PC. I haven't carefully benchmarked this, but
+            -- it doesn't seem to be remotely laggy and trashes items very fast.
+            sleep(1)
         end
     end
+    -- parallel is a ComputerCraft API that
+    -- runs multiple functions at the same time.
     parallel.waitForAll(breedLoop, trashLoop)
-else
-    doBreedCycle()
-    doTrashCycle()
 end

@@ -1,3 +1,18 @@
+-- Sort a list of bees based on multiple criteria.
+-- That is, we actually want a bee that has both fast speed and short lifespan
+-- (short because you can mutate faster)
+-- But if we only have some fast bees with long lifespans,
+-- and some slow bees with short lifespans,
+-- we need to need to at least *sometimes* pick the fast bee,
+-- and sometimes pick the short lifespan bee.
+
+-- So, we sort the bees by each criteria separately,
+-- then we pick from each sorted list in random/round-robin fashion.
+-- We're just relying on built-in `table.sort`, but providing a custom comparator.
+-- But the comparator is complicated, because each one has to check every criteria.
+-- Each criteria starts as just a comparator and a selector,
+-- and the final comparators are generated from those.
+
 require("bee_sort.selectors")
 
 -- Number of slots to keep in diamond chest
@@ -33,8 +48,7 @@ local function compareTrait(a, b)
     -- a and b are bools, saying whether
     -- the bees are completely purebred,
     -- even for traits we don't care about,
-    -- meaning their produced drones will always stack
-    -- with this one.
+    -- meaning their produced drones will always stack.
     if a == b then
         return false, true
     else
@@ -66,7 +80,9 @@ local generateBasicComparator = function(comparator, selector)
     return innerCompare
 end
 
-local generateSingleCriteriaComparator = function(criteria)
+-- Forestry has Mendelian genetics, so we check both the
+-- dominant (active) and recessive (inactive) alleles.
+local generateCriteriaComparator = function(criteria)
     local comparator = criteria.comparator
     local selector = criteria.selector
 
@@ -87,15 +103,20 @@ end
 
 ComparatorList = {}
 GenerateComparators = function()
-    -- For each criteria, we need a comparator that starts with a comparator for that criteria,
-    -- followed by comparators for all other criteria.
-    -- There should be 1 final comparator for each criteria.
-    -- The order that criteria are applied should just cycle,
-    -- So, if we have criteria A, B, and C,
-    -- The first comparator should be:
-    -- checkRank, then A, B, C, then trait equal
-    -- then the second comparator should be:
-    -- checkRank, then B, C, A, then trait equal
+    -- For each criteria, we need a comparator that starts with a comparator
+    --- for that criteria, followed by comparators for all other criteria.
+    -- The order of the other criteria doesn't really matter (TODO?),
+    -- so we can just rotate through them.
+    -- Meaning if we have criteria A, B, C,
+    -- we generate comparators for:
+    -- A, B, C
+    -- B, C, A
+    -- C, A, B
+
+    -- Also note that each comparator starts by comparing "rank",
+    -- which sorts by simple stuff that we don't need multiple criteria for.
+    -- Then, at the end, we compare whether the bee is fully purebred,
+    -- which only matters if the bee is already basically perfect.
 
     local criteriaCount = #CriteriaList
     for i, criteria in ipairs(CriteriaList) do
@@ -103,7 +124,7 @@ GenerateComparators = function()
         table.insert(comparatorList, generateBasicComparator(compareRank, GetRank))
         for j = 0, criteriaCount - 1 do
             local index = ((i - 1 + j) % criteriaCount) + 1
-            table.insert(comparatorList, generateSingleCriteriaComparator(CriteriaList[index]))
+            table.insert(comparatorList, generateCriteriaComparator(CriteriaList[index]))
         end
         table.insert(comparatorList, generateBasicComparator(compareTrait, IsFullyPure))
 
@@ -167,11 +188,23 @@ local function getFinalSortedItems(sortedTables, count)
     local finalItems = {}
     local slotSet = {}
     local criteriaCount = table.length(sortedTables)
+
+    -- Outer loop goes over each index of all the items in reverse order.
+    -- The best items are at the end of each list (for some reason?),
+    -- so we choose from the end, and always insert at the start of the final list.
     for i = count, 1, -1 do
         local availableIndexes = {}
         for i = 1, criteriaCount do
             table.insert(availableIndexes, i)
         end
+
+        -- Inner loop goes over each sorted list, randomly choosing one.
+        -- We always check all the lists at each index, so none get randomly preferred.
+        -- Consider sortedTables:
+        --      [A, B, C] and [C, A, B],
+        -- The first item will always be random between A or C,
+        -- and the second place will always be the other one.
+        -- B will always be last.
         for j = 1, criteriaCount do
             local randomIndex = popRandomFromArray(availableIndexes)
             local chosenBee = sortedTables[randomIndex][i]
